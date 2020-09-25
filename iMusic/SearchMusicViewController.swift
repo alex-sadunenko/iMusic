@@ -1,8 +1,8 @@
 //
-//  SearchTableViewController.swift
+//  SearchViewController.swift
 //  iMusic
 //
-//  Created by Alex on 03.09.2020.
+//  Created by Alex on 24.09.2020.
 //  Copyright © 2020 Alex Sadunenko. All rights reserved.
 //
 
@@ -14,15 +14,16 @@ struct TrackModel {
     var artistName: String
 }
 
-class SearchTableViewController: UITableViewController {
-
+class SearchMusicViewController: UITableViewController {
+    
+    var networkService = NetworkService()
+    private var timer: Timer?
     let searchController = UISearchController(searchResultsController: nil)
-    let tracks = [TrackModel(trackName: "First track", artistName: "Nirvana"),
-                 TrackModel(trackName: "Second", artistName: "Abba")]
+    var tracks = [Track]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         view.backgroundColor = .white
         
         setupSearchBar()
@@ -35,16 +36,13 @@ class SearchTableViewController: UITableViewController {
         navigationItem.searchController = searchController
         searchController.searchBar.delegate = self
     }
-
-    // MARK: - Table view data source
-
+    
+    // MARK: - Table View Data Source
     override func numberOfSections(in tableView: UITableView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
         return 1
     }
-
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
         return tracks.count
     }
     
@@ -60,13 +58,20 @@ class SearchTableViewController: UITableViewController {
         //cell.imageView?.clipsToBounds = true
         return cell
     }
-
+    
 }
 
-extension SearchTableViewController: UISearchBarDelegate {
+// MARK: - Search Bar Delegate
+extension SearchMusicViewController: UISearchBarDelegate {
+    
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        print(searchText)
-        guard let url = URL(string: "https://itunes.apple.com/search?term=jack+johnson") else { return }
-        Alamofire.URLRequest(url: url, method: .get).respo
+        
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false, block: { (_) in
+            self.networkService.fetchTracks(searchText: searchText) { [weak self] (searchResults) in
+                self?.tracks = searchResults?.results ?? []
+                self?.tableView.reloadData() 
+            }
+        })
     }
 }
